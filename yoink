@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+
+import sys, getopt, tarfile
+import os
+from os import path
+class bcolors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def printColorLine(color,line):
+    print("{0}{1}{2}".format(color,line,bcolors.ENDC))
+
+def extract(tarball,extractOnly):
+    tarball.extractall('/')
+    if extractOnly:
+        tarball.close()
+def doInstallOnly(tarball,installOnly):
+    try:
+        tarball.getmember('./install.sh')
+        tarball.extract('./install.sh','/tmp/')
+    except KeyError:
+        pass
+    if installOnly:
+        tarball.close()
+    if path.exists('/tmp/install.sh'):
+        printColorLine(bcolors.CYAN,"Running install script...")
+        os.system('/bin/bash /tmp/install.sh')
+def doExtraction(package,installOnly,extractOnly,installAll):
+    printColorLine(bcolors.HEADER,"Yoink package: {0}".format(package))
+    yoink_package = None
+    if not path.exists(package):
+        printColorLine(bcolors.FAIL,"Package {0} does not exist!".format(package))
+        exit(1)
+    else:
+        yoink_package = tarfile.open(package)
+        printColorLine(bcolors.GREEN,"Installing {0}...".format(package))
+    if installOnly:
+        doInstallOnly(yoink_package,True)
+        printColorLine(bcolors.GREEN,"Done.")
+        exit(0)
+    if extractOnly:
+        extract(yoink_package,True)
+        printColorLine(bcolors.GREEN,"Done.")
+        exit(0)
+    if installAll:
+        extract(yoink_package,False)
+        doInstallOnly(yoink_package,False)
+        yoink_package.close()
+        printColorLine(bcolors.GREEN,"Done.")
+        exit(0)
+
+
+def main(argv):
+    package = ''
+    installOnly = None
+    extractOnly = None
+    installAll = None
+
+    try:
+        opts, args = getopt.getopt(argv,"i:e:a:",["install=","extract=","all="])
+    except:
+        print("yoink [ -i [--install=...], -e [--extract=...], -a [--all=...]]")
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ("-i","--install"):
+            installOnly=True
+            package = arg
+            break
+        elif opt in ("-e","--extract"):
+            extractOnly=True
+            package = arg
+            break
+        elif opt in ("-a","--all"):
+            installAll=True
+            package = arg
+            break
+    if package == '':
+        printColorLine(bcolors.FAIL,"You need to supply a package!")
+        exit(1)
+    doExtraction(package,installOnly,extractOnly,installAll)   
+if __name__ == "__main__":
+    main(sys.argv[1:])
