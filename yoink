@@ -56,7 +56,6 @@ def doExtraction(package,installOnly,extractOnly,installAll):
         printColorLine(bcolors.GREEN,"Done.")
         exit(0)
 
-
 def main(argv):
     package = ''
     installOnly = None

@@ -2,7 +2,7 @@
 args=$@
 progs_to_install=()
 progs_shortname=()
-MIRROR="gtower.ad.peasenet.com/yoinklinux"
+source /etc/yoink/mirror
 for prog in ${args}; do
 	package_line=`cat /usr/lib/yoink/yoink.db | grep $prog`;
 	if [[ $? -eq 0 ]]; then
@@ -21,14 +21,15 @@ done
 #done
 
 for i in "${!progs_to_install[@]}"; do
-	echo Downloading ${progs_shortname[$i]} - ${progs_to_install[i]};
-	$(wget -q -P /var/cache/yoink "$MIRROR/$program") 2>&1 >/dev/null
+	echo Downloading ${progs_shortname[$i]} - ${progs_to_install[i]} from $YOINK_MIRROR;
+	program=${progs_to_install[i]};
+	$(wget -q -P /var/cache/yoink "$YOINK_MIRROR/yoinklinux/$program") 2>&1 >/dev/null
 	echo Done.
 done
 
 # Installs the program.
 
 for i in "${!progs_to_install[@]}"; do 
-	tarball=${progs_to_install[i]}
+	tarball=${progs_to_install[i]};
 	yoink -a /var/cache/yoink/$tarball;
 done
