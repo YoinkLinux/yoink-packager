@@ -33,7 +33,7 @@ function download_packages() {
 function install_packages(){
 	for i in "${!progs_to_install[@]}"; do 
 		tarball=${progs_to_install[i]};
-		/etc/yoink/yoink-pkgr -a /var/cache/yoink/$tarball;
+		/etc/yoink/yoink-pkgr install /var/cache/yoink/$tarball ;
 	done
 }
 
