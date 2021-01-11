@@ -5,7 +5,7 @@ SKIP_CHECK=false
 HAS_INSTALL=false
 function check_file(){
     file="$1"
-    { tar tvf "$file" .TREE ;} 2> /dev/null
+    { tar tvf "$file" .TREE ;} > /dev/null
     tree_status=$?
     if [[ "$tree_status" -ne 0 ]]; then
         echo "Package $file does not have a .TREE file? What are you doing?"
@@ -21,17 +21,17 @@ function check_file(){
 
 run_install(){
 	file="$1"
-	[[ $HAS_INSTALL ]] && tar xf "$file" -O install.sh | bash
+	[[ $HAS_INSTALL ]] && $(tar xf "$file" -O install.sh | bash)
 }
 
 function install_packages(){
     for package in "${package_list}"; do
-        [[ ! $SKIP_CHECK ]] && check_file "$package"
+        [[ ! $SKIP_CHECK = "true" ]] && check_file "$package"
         
 	echo "Unpacking $(basename $package)"
         tar --dereference --exclude=.TREE --exclude=install.sh -xf $package -C /
 
-	[[ $HAS_INSTALL ]] && run_install $package
+	[[ $HAS_INSTALL = "true" ]] && run_install $package
 	echo "Done."
     done
 }
