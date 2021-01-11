@@ -1,7 +1,7 @@
 #!/bin/bash
 
 package_list=()
-
+SKIP_CHECK=false
 function check_file(){
     file="$1"
     { tar tvf "$file" .TREE ;} 2> /dev/null
@@ -14,7 +14,7 @@ function check_file(){
 
 function install_packages(){
     for package in "${package_list}"; do
-        check_file "$package"
+        [[ ! $SKIP_CHECK ]] && check_file "$package"
         echo "Unpacking $(basename $package)"
         tar xf $package -C /
     done
@@ -29,6 +29,9 @@ while [[ $# -gt 0 ]]; do
                 INSTALL=true
                 break
                 ;;
+            "--skip-check")
+                    SKIP_CHECK=true
+                    ;;
             "extract")
                 echo "Method stub."
                 break
