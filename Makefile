@@ -11,3 +11,4 @@ install: all
 	install -vm 755 yoink-pkgr $(DESTDIR)/etc/yoink
 	install -vm 644 db/yoink.db $(DESTDIR)/etc/yoink/db
 	install -vm 644 mirror $(DESTDIR)/etc/yoink/
+	install -vm 644 etc/INSTALL.sample $(DESTDIR)/etc/yoink/INSTALL.sample

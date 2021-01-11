@@ -16,7 +16,7 @@ function install_packages(){
     for package in "${package_list}"; do
         [[ ! $SKIP_CHECK ]] && check_file "$package"
         echo "Unpacking $(basename $package)"
-        tar xf $package -C /
+        tar --dereference --exclude=.TREE --exclude=install.sh -xf $package -C /
     done
 }
 
