@@ -4,7 +4,7 @@ package_list=()
 SKIP_CHECK=false
 function check_file(){
     file="$1"
-    { tar tvf "$file" .TREE ;} 2> /dev/null
+    { tar tvf "$file" .TREE ;} > /dev/null
     tree_status=$?
     if [[ "$tree_status" -ne 0 ]]; then
             echo "Package $file does not have a .TREE file? What are you doing?"
