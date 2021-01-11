@@ -27,9 +27,12 @@ run_install(){
 function install_packages(){
     for package in "${package_list}"; do
         [[ ! $SKIP_CHECK ]] && check_file "$package"
-        echo "Unpacking $(basename $package)"
+        
+	echo "Unpacking $(basename $package)"
         tar --dereference --exclude=.TREE --exclude=install.sh -xf $package -C /
-		[[ $HAS_INSTALL ]] && run_install
+
+	[[ $HAS_INSTALL ]] && run_install $package
+	echo "Done."
     done
 }
 
