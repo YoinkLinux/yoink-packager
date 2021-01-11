@@ -43,20 +43,25 @@ function gen_tree(){
 	find -not -name 'install.sh' -not -name '.TREE' -printf '%P\n' > .TREE;
 	builtin cd $currdir
 }
-
+ # If you need to set permissions to different files, do so here, and do the relative directories.
+function set_permissions(){
+	/bin/true
+}
 # Put post-build commands here.
 function post_build(){
 	[[ -f install.sh ]] && cp ./install.sh /tmp/yoink/$name
  	gen_tree	
 	# Do not change any more lines.
 	builtin cd /tmp/yoink/$name
+	chown root:root -R .
 	if [[ ! -z $rel_version ]]; then
-		tar --exclude=./ --xform s:'./':: -czf ~/$name-$major_version.$min_version.$rel_version.tar.gz ./
+		tar --exclude=./ --xform s:'./':: -czf /tmp/$name-$major_version.$min_version.$rel_version.tar.gz ./
 	elif [[ ! -z $min_version ]]; then
-                tar --exclude=./ --xform s:'./':: -czf ~/$name-$major_version.$min_version.tar.gz ./
+                tar --exclude=./ --xform s:'./':: -czf /tmp/$name-$major_version.$min_version.tar.gz ./
         else
-                tar --exclude=./ --xform s:'./':: -czf ~/$name-$major_version.tar.gz ./
+                tar --exclude=./ --xform s:'./':: -czf /tmp/$name-$major_version.tar.gz ./
         fi
+	set_permissions
 	cd $prev_dir
 	rm -rf /tmp/yoink/$name
 

@@ -21,9 +21,9 @@ function find_packages() {
 
 function download_packages() {
 	for i in "${!progs_to_install[@]}"; do
-		echo Downloading ${progs_shortname[$i]} - ${progs_to_install[i]} from $YOINK_MIRROR;
+		echo "Downloading ${progs_shortname[$i]} (${progs_to_install[i]}) from $YOINK_MIRROR";
 		program=${progs_to_install[i]};
-		$(wget -q -P /var/cache/yoink "$YOINK_MIRROR/yoinklinux/$program") 2>&1 >/dev/null
+		$(wget -q -O "/var/cache/yoink/$program" "$YOINK_MIRROR/yoinklinux/$program") 2>&1 >/dev/null
 		echo Done.
 	done
 }
@@ -57,7 +57,6 @@ while [[ $# -gt 0 ]] ; do
 		;;
 		"install")
 			progs_list=$@
-			echo "New progs_list: $progs_list"
 			INSTALL=true
 			break
 		;;
