@@ -15,7 +15,7 @@ function check_file(){
 function install_packages(){
     for package in "${package_list}"; do
         check_file "$package"
-        echo "Installing package from $package"
+        echo "Unpacking $(basename $package)"
         tar xf $package -C /
     done
 }
