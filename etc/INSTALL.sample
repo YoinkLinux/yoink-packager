@@ -1,6 +1,6 @@
 #!/bin/bash
 # Package information
-packager="your AT email DOT com"
+packager="gavinpease AT gmail DOT com"
 name=your-package
 major_version=0
 min_version=0
@@ -10,6 +10,8 @@ download=
 # Some nice envionment variables
 prev_dir=$PWD
 srcfolder=$name-src
+tmpname=/tmp/yoink/$name
+
 function get_source() {
 	mkdir $srcfolder
 	builtin cd $srcfolder
@@ -33,14 +35,14 @@ function build() {
 
 # Only change the line that says `make install`
 function build_install() {
-	mkdir /tmp/yoink/$name -p
-	make install DESTDIR=/tmp/yoink/$name
+	sudo mkdir $tmpname -p
+	sudo make install DESTDIR=$tmpname
 }
 
 function gen_tree(){
 	currdir=$PWD
-	builtin cd /tmp/yoink/$name
-	find -not -name 'install.sh' -not -name '.TREE' -printf '%P\n' > .TREE;
+	builtin cd $tmpname
+	sudo sh -c "find -not -name 'install.sh' -not -name '.TREE' -printf '%P\n' > .TREE";
 	builtin cd $currdir
 }
  # If you need to set permissions to different files, do so here, and do the relative directories.
@@ -49,11 +51,13 @@ function set_permissions(){
 }
 # Put post-build commands here.
 function post_build(){
-	[[ -f install.sh ]] && cp ./install.sh /tmp/yoink/$name
+	builtin cd $tmpname
+	# Add links/files here.
+	
+	#
+	[[ -f install.sh ]] && cp ./install.sh $tmpname
  	gen_tree	
-	# Do not change any more lines.
-	builtin cd /tmp/yoink/$name
-	chown root:root -R .
+	sudo chown root:root -R .
 	if [[ ! -z $rel_version ]]; then
 		tar --exclude=./ --xform s:\\./:: -czf /tmp/$name-$major_version.$min_version.$rel_version.tar.gz ./
 	elif [[ ! -z $min_version ]]; then
@@ -63,7 +67,8 @@ function post_build(){
         fi
 	set_permissions
 	cd $prev_dir
-	rm -rf /tmp/yoink/$name
+	sudo rm -rf $tmpname
+	rm -rf $srcfolder
 
 }
 export -f get_source
