@@ -1,6 +1,6 @@
 #!/bin/bash
 # Package information
-packager="gavinpease AT gmail DOT com"
+packager="your AT email DOT com"
 name=your-package
 major_version=0
 min_version=0
