@@ -52,10 +52,9 @@ function install_packages(){
 	for i in "${!progs_to_install[@]}"; do 
 		tarball=${progs_to_install[i]};
 		name=${package_names[i]}
-		grep -w $name /etc/yoink/installed.db > /dev/null
-		if [[ $? -ne 0 ]]; then
-			echo ${package_names[i]} >> /etc/yoink/installed/installed.db;
-		fi
+		[[ -f /etc/yoink/db/installed.db ]] && \ 
+			grep -w $name /etc/yoink/db/installed.db > /dev/null && \
+			echo ${package_names[i]} >> /etc/yoink/db/installed.db;
 		/etc/yoink/yoink-pkgr install /var/cache/yoink/$tarball ;
 	done
 }
