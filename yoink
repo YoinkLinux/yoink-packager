@@ -51,10 +51,13 @@ function download_packages() {
 function install_packages(){
 	for i in "${!progs_to_install[@]}"; do 
 		tarball=${progs_to_install[i]};
-		name=${package_names[i]}
-		[[ -f /etc/yoink/db/installed.db ]] && \ 
-			grep -w $name /etc/yoink/db/installed.db > /dev/null && \
-			echo ${package_names[i]} >> /etc/yoink/db/installed.db;
+		name=${progs_to_install_names[i]}
+		[[ ! -f /etc/yoink/db/installed.db ]] && touch /etc/yoink/db/installed.db
+		
+		grep -w $name /etc/yoink/db/installed.db > /dev/null ||
+		(echo "Adding $name to installed list..." && 
+		echo $name >> /etc/yoink/db/installed.db);
+
 		/etc/yoink/yoink-pkgr install /var/cache/yoink/$tarball ;
 	done
 }
