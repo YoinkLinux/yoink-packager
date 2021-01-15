@@ -4,7 +4,7 @@ packager="gavinpease AT gmail DOT com"
 name=yoink-scripts
 major_version=0
 min_version=1
-rel_version=1
+rel_version=2
 download=
 
 # Some nice envionment variables

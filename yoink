@@ -5,6 +5,7 @@ progs_shortname=()
 progs_list=()
 packages=()
 package_names=()
+progs_to_install_names=()
 source /etc/yoink/mirror
 INSTALL=false
 
@@ -20,20 +21,23 @@ function create_package_list(){
 function find_packages() {
 	for request in ${progs_list}; do
 		for program in ${!package_names[@]}; do
-			if [[ "$request" == "${package_names[$program]}" ]];
+			if [[ "$request" == "${package_names[$program]}" ]]; then
 				progs_to_install+=("${packages[$program]}");
-				break;
+				progs_to_install_names+=("${package_names[$program]}")
 			fi
 		done
 	done
-	echo Packages to install: $progs_to_install
+	echo Packages to install: ${progs_to_install[@]}
+	echo Package names: ${progs_to_install_names[@]}
 }
 
 # Downloads the program.
 
 function download_packages() {
+	echo "Yoink mirror: $YOINK_MIRROR"
+	echo ""
 	for i in "${!progs_to_install[@]}"; do
-		echo "Downloading ${package_names[$i]} (${progs_to_install[i]}) from $YOINK_MIRROR";
+		echo "Downloading ${progs_to_install_names[$i]} (${progs_to_install[i]})";
 		program=${progs_to_install[i]};
 		$(wget -q -O "/var/cache/yoink/$program" "$YOINK_MIRROR/yoinklinux/$program") 2>&1 >/dev/null
 		echo Done.
@@ -54,6 +58,8 @@ function yoink_update(){
 	$(wget -q -O /etc/yoink/yoink.db "$YOINK_MIRROR/yoinklinux/yoink.db") 2>&1 > /dev/null
 	echo "Done."
 }
+
+export -f create_package_list
 export -f find_packages
 export -f download_packages
 export -f install_packages
@@ -79,6 +85,7 @@ while [[ $# -gt 0 ]] ; do
 done
 
 if [[ $INSTALL -eq true ]]; then
+	create_package_list
 	find_packages
 	download_packages
 	install_packages
