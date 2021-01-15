@@ -1,0 +1,5 @@
+This is the source code for the YoinkLinux package manager, yoink and its helper, yoink-pkgr.  Yoink parses the yoink package database, and installs the requested package if it exists. Yoink-pkgr is essentially a GNU tar wrapper that installs the tarball properly on the YoinkLinux system. 
+
+TODO:
+- Package removal
+- Dependency resolution
