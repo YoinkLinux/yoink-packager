@@ -12,11 +12,11 @@ INSTALL=false
 [[ $(id -u) -ne 0 ]] && echo "User must be root!" && exit 1
 
 function create_package_list(){
-	for prog in $(cat /etc/yoink/yoink.db | cut -d ',' -f 2); do
-		packages+=("$prog")
+	for prog_name in $(cat /etc/yoink/yoink.db | cut -d ',' -f 1); do
+		package_names+=("$prog_name");
 	done
-	for prog in $(cat /etc/yoink/yoink.db | cut -d ',' -f 1); do
-		package_names+=("$prog");
+	for prog_pkg in $(cat /etc/yoink/yoink.db | cut -d ',' -f 2); do
+		packages+=("$prog_pkg")
 	done
 }
 
