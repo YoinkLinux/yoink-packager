@@ -12,10 +12,10 @@ INSTALL=false
 [[ $(id -u) -ne 0 ]] && echo "User must be root!" && exit 1
 
 function create_package_list(){
-	for prog_name in $(cat /etc/yoink/yoink.db | cut -d ',' -f 1); do
+	for prog_name in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 1); do
 		package_names+=("$prog_name");
 	done
-	for prog_pkg in $(cat /etc/yoink/yoink.db | cut -d ',' -f 2); do
+	for prog_pkg in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 2); do
 		packages+=("$prog_pkg")
 	done
 }
@@ -51,13 +51,18 @@ function download_packages() {
 function install_packages(){
 	for i in "${!progs_to_install[@]}"; do 
 		tarball=${progs_to_install[i]};
+		name=${package_names[i]}
+		grep -w $name /etc/yoink/installed.db > /dev/null
+		if [[ $? -ne 0 ]]; then
+			echo ${package_names[i]} >> /etc/yoink/installed/installed.db;
+		fi
 		/etc/yoink/yoink-pkgr install /var/cache/yoink/$tarball ;
 	done
 }
 
 function yoink_update(){
 	echo "Updating yoink database..."
-	$(wget -q -O /etc/yoink/yoink.db "$YOINK_MIRROR/yoinklinux/yoink.db") 2>&1 > /dev/null
+	$(wget -q -O /etc/yoink/db/yoink.db "$YOINK_MIRROR/yoinklinux/yoink.db") 2>&1 > /dev/null
 	echo "Done."
 }
 
