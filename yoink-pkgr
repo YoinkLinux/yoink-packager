@@ -4,7 +4,7 @@ package_list=()
 SKIP_CHECK=false
 HAS_INSTALL=false
 
-[[ $(id -u) -ne 0 ]] && echo "Must be root to use!" ; exit 1
+[[ $(id -u) -ne 0 ]] && echo "Must be root to use!" && exit 1
 
 function check_file(){
     file="$1"
@@ -32,7 +32,12 @@ function install_packages(){
         [[ ! $SKIP_CHECK = "true" ]] && check_file "$package"
         
 	echo "Unpacking $(basename $package)"
-        tar --dereference --exclude=.TREE --exclude=install.sh -xf $package -C /
+	if [[ ! -z $YOINK_INSTALL_DIR ]]; then
+		DIR=$YOINK_INSTALL_DIR
+	else
+		DIR=/
+	fi
+	        tar --dereference --exclude=.TREE --exclude=install.sh -xf $package -C $DIR
 
 	[[ $HAS_INSTALL = "true" ]] && run_install $package
 	echo "Done."
