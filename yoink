@@ -9,6 +9,8 @@ progs_to_install_names=()
 source /etc/yoink/mirror
 INSTALL=false
 
+[[ $(id -u) -ne 0 ]] && echo "User must be root!" && exit 1
+
 function create_package_list(){
 	for prog in $(cat /etc/yoink/yoink.db | cut -d ',' -f 2); do
 		packages+=("$prog")

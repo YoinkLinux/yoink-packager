@@ -3,6 +3,9 @@
 package_list=()
 SKIP_CHECK=false
 HAS_INSTALL=false
+
+[[ $(id -u) -ne 0 ]]; echo "Must be root to use!" ; exit 1
+
 function check_file(){
     file="$1"
     { tar tvf "$file" .TREE ;} &> /dev/null
