@@ -58,12 +58,13 @@ function post_build(){
 	[[ -f install.sh ]] && cp ./install.sh $tmpname
  	gen_tree	
 	sudo chown root:root -R .
+	tar_prefix=tar --exclude=./ -P -czf
 	if [[ ! -z $rel_version ]]; then
-		tar --exclude=./ --xform s:\\./:: -czf /tmp/$name-$major_version.$min_version.$rel_version.tar.gz ./
+		$tar_prefix /tmp/$name-$major_version.$min_version.$rel_version.tar.gz ./
 	elif [[ ! -z $min_version ]]; then
-                tar --exclude=./ --xform s:\\./:: -czf /tmp/$name-$major_version.$min_version.tar.gz ./
+                $tar_prefix /tmp/$name-$major_version.$min_version.tar.gz ./
         else
-                tar --exclude=./ --xform s:\\./:: -czf /tmp/$name-$major_version.tar.gz ./
+                $tar_prefix /tmp/$name-$major_version.tar.gz ./
         fi
 	set_permissions
 	cd $prev_dir
