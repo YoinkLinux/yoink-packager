@@ -3,7 +3,7 @@
 package_list=()
 SKIP_CHECK=false
 HAS_INSTALL=false
-
+HAS_INSTALL_DOTSLASH=false
 [[ $(id -u) -ne 0 ]] && echo "Must be root to use!" && exit 1
 
 function check_file(){
@@ -11,20 +11,35 @@ function check_file(){
     { tar tvf "$file" .TREE ;} &> /dev/null
     tree_status=$?
     if [[ "$tree_status" -ne 0 ]]; then
-        echo "Package $file does not have a .TREE file? What are you doing?"
+    	{ tar tvf "$FILE" ./.TREE ;} &> /dev/null
+	tree_status=$?
+	if [[ "$tree_status" -ne 0 ]]; then
+	        echo "Package $file does not have a .TREE file? What are you doing?"
+	fi
 	exit 1
     fi
     { tar tvf "$file" install.sh ;} &> /dev/null
     install_status=$?
     if [[ "$install_status" -eq 0 ]]; then
 	HAS_INSTALL=true
+	return
     fi
+    { tar tvf "$file" ./install.sh ;} &> /dev/null
+    install_status=$?
+    if [[ "$install_status" -eq 0 ]]; then
+        HAS_INSTALL_DOTSLASH=true
+	return
+    fi
+
 }
+
+
 
 run_install(){
 	file="$1"
 	echo "Found install script for $(basename $file)"
 	[[ $HAS_INSTALL ]] && $(tar xf "$file" -O install.sh | bash)
+	[[ $HAS_INSTALL_DOTSLASH ]] && $(tar xf "$file" -O ./install.sh | bash)
 }
 
 function install_packages(){
@@ -37,7 +52,7 @@ function install_packages(){
 	else
 		DIR=/
 	fi
-	        tar --dereference --exclude=.TREE --exclude=install.sh -xf $package -C $DIR
+	        tar --dereference --exclude=.TREE --exclude=install.sh --exclude=./.TREE --exclude=./install.sh -xf $package -C $DIR
 
 	[[ $HAS_INSTALL = "true" ]] && run_install $package
 	echo "Done."
