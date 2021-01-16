@@ -8,23 +8,23 @@ HAS_INSTALL_DOTSLASH=false
 
 function check_file(){
     file="$1"
-    { tar tvf "$file" .TREE ;} &> /dev/null
+    { tar xf "$file" .TREE -C /tmp;} &> /dev/null
     tree_status=$?
     if [[ "$tree_status" -ne 0 ]]; then
-    	{ tar tvf "$FILE" ./.TREE ;} &> /dev/null
+    	{ tar xf "$file" ./.TREE -C /tmp;} &> /dev/null
 	tree_status=$?
 	if [[ "$tree_status" -ne 0 ]]; then
 	        echo "Package $file does not have a .TREE file? What are you doing?"
 	fi
 	exit 1
     fi
-    { tar tvf "$file" install.sh ;} &> /dev/null
+    { tar xf "$file" install.sh -C /tmp;} &> /dev/null
     install_status=$?
     if [[ "$install_status" -eq 0 ]]; then
 	HAS_INSTALL=true
 	return
     fi
-    { tar tvf "$file" ./install.sh ;} &> /dev/null
+    { tar xf "$file" ./install.sh -C /tmp;} &> /dev/null
     install_status=$?
     if [[ "$install_status" -eq 0 ]]; then
         HAS_INSTALL_DOTSLASH=true
@@ -38,8 +38,8 @@ function check_file(){
 run_install(){
 	file="$1"
 	echo "Found install script for $(basename $file)"
-	[[ $HAS_INSTALL ]] && $(tar xf "$file" -O install.sh | bash)
-	[[ $HAS_INSTALL_DOTSLASH ]] && $(tar xf "$file" -O ./install.sh | bash)
+	[[ $HAS_INSTALL ]] && chmod +x /tmp/install.sh && /tmp/install.sh ; rm /tmp/install.sh
+	[[ $HAS_INSTALL_DOTSLASH ]] && chmod +x /tmp/install.sh && /tmp/install.sh ; rm /tmp/install.sh
 }
 
 function install_packages(){
