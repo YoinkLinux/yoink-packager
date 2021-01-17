@@ -9,115 +9,161 @@ from enum import Enum
 package_by_name = []
 package_by_file = []
 package_dependencies = []
-
+package_timestamps = []
 yoink_dir="/etc/yoink"
 yoink_db="{0}/db/yoink.db".format(yoink_dir)
 installed_db="{0}/db/installed.db".format(yoink_dir)
 class log_level(Enum):
-	INFO = 0
-	WARN = 1
-	ERR = 2
+    INFO = 0
+    WARN = 1
+    ERR = 2
 
 
 def log(level,line):
-	if level == log_level.INFO:
-		print("[INFO] {0}".format(line))
+    strtype=""
+    if level == log_level.ERR:
+        strtype="ERROR"
+    else:
+        strtype="INFO"
+    print("[{0}] {1}".format(strtype,line))
+    
 
 def create_package_list():
-	rows = []
-	log(log_level.INFO,"Opening database: {0}".format(yoink_db))
-	with open(yoink_db, 'r') as db:
-		db_reader = csv.reader(db)
-		db_fields = next(db_reader)
+    rows = []
+    log(log_level.INFO,"Opening database: {0}".format(yoink_db))
+    with open(yoink_db, 'r') as db:
+        db_reader = csv.reader(db)
+        db_fields = next(db_reader)
 
-		for row in db_reader:
-			rows.append(row)
-		for row in rows:
-			try:	
-				package_by_name.append(row[0])
-				package_by_file.append(row[1])
-				package_dependencies.append(row[2].strip().split(' '))
-			except:
-				pass
+        for row in db_reader:
+            rows.append(row)
+        for row in rows:
+            try:    
+                package_by_name.append(row[0])
+                package_by_file.append(row[1])
+                package_dependencies.append(row[2].strip().split(' '))
+                package_timestamps.append(row[3].strip())
+            except:
+                pass
 
 def resolve_dependencies(dependencies):
-	for dependency in dependencies:
-		try:
-			dep_index = package_by_name.index(dependency)
-		except:
-			continue
-		dep_list = package_dependencies[dep_index]
-		for dep in dep_list:
-			if (dep not in dependencies) and not dep == '':
-				dependencies.append(dep)
-				dependencies=resolve_dependencies(dependencies)
-	return dependencies		
-		
+    for dependency in dependencies:
+        try:
+            dep_index = package_by_name.index(dependency)
+        except:
+            continue
+        dep_list = package_dependencies[dep_index]
+        for dep in dep_list:
+            if (dep not in dependencies) and not dep == '':
+                dependencies.append(dep)
+                dependencies=resolve_dependencies(dependencies)
+    return dependencies     
+        
 def install_packages(list):
-	log(log_level.INFO,"Passing off to yoink-installer")
-	command="{0}{1} install {2}".format(yoink_dir,"/yoink-installer",list)
-	log(log_level.INFO,"Command : {0}".format(command))
-	os.system(command)
+    log(log_level.INFO,"Passing off to yoink-installer")
+    command="{0}{1} install {2}".format(yoink_dir,"/yoink-installer",list)
+    log(log_level.INFO,"Command : {0}".format(command))
+    os.system(command)
 
 def generate_install_list(package_list,reinstall):
-	to_install = []
-	dependencies = []
-	for package in package_list:
-		pkg_index = package_by_name.index(package)
-		to_install.append(package)
-		for dependency in package_dependencies[pkg_index]:
-			dependencies.append(dependency)
-	tmp_list = []
-	for x in to_install:
-		tmp_list.append(x)
-	if not reinstall:
-		deps = resolve_dependencies(dependencies)
-		for x in deps:
-			if x != '':
-				tmp_list.append(x)
+    to_install = []
+    dependencies = []
+    for package in package_list:
+        try:
+            pkg_index = package_by_name.index(package)
+        except:
+            log(log_level.ERR,"Package {0} not in database!".format(package))
+            exit(1)
+        to_install.append(package)
+        for dependency in package_dependencies[pkg_index]:
+            dependencies.append(dependency)
+    tmp_list = []
+    for x in to_install:
+        tmp_list.append(x)
+    if not reinstall:
+        deps = resolve_dependencies(dependencies)
+        for x in deps:
+            if x != '':
+                tmp_list.append(x)
 
-		to_install = tmp_list
+        to_install = tmp_list
 
-	if 'filesystem' in to_install:
-		to_install.remove('filesystem')
-		to_install.insert(0,'filesystem')
+    if 'filesystem' in to_install:
+        to_install.remove('filesystem')
+        to_install.insert(0,'filesystem')
 
-	installed = open(installed_db,'r')
-	log(log_level.INFO,"Opening {0}".format(installed_db))
-	installed_pkg_lines = installed.readlines()
-	if not reinstall:
-		for line in installed_pkg_lines:
-			pkg = line.strip()
-			if pkg in to_install:
-				print("Removing {0}, it is already installed.".format(pkg))
-				to_install.remove(pkg)
-	
-	pretty_line=""
-	for package in to_install:
-		pretty_line=pretty_line + package + " "
-	install_packages(pretty_line)
+    installed = open(installed_db,'r')
+    log(log_level.INFO,"Opening {0}".format(installed_db))
+    installed_pkg_lines = installed.readlines()
+    if not reinstall:
+        for line in installed_pkg_lines:
+            pkg = line.strip().split(',')[0]
+            try:
+                timestamp = line.strip().split(',')[1]
+            except:
+                timestamp = 0
+            pkg_index = package_by_name.index(pkg)
+            if (pkg in to_install) or not (int(timestamp) < int(package_timestamps[pkg_index])):
+                try:
+                    to_install.remove(pkg)
+                except:
+                    pass
+            if (int(timestamp) < int(package_timestamps[pkg_index])):
+                log(log_level.INFO,"{0} has an update!".format(pkg))
+                os.system("sed 's/"+pkg+","+str(timestamp)+"/"+pkg+","+str(package_timestamps[pkg_index])+"/g' -i /etc/yoink/db/installed.db")
+                if pkg not in to_install:
+                    to_install.append(pkg)
+    
+    pretty_line=""
+    for package in to_install:
+        pretty_line=pretty_line + package + " "
+    install_packages(pretty_line)
 
 def update():
-	log(log_level.INFO,"Updating database...")	
-	os.system('$(wget -q -O /etc/yoink/db/yoink.db "$YOINK_MIRROR/yoinklinux/yoink.db") 2>&1 > /dev/null')
-	print("Done.")
+    log(log_level.INFO,"Updating database...")  
+    os.system('source /etc/yoink/mirror ; wget -q -O /etc/yoink/db/yoink.db "$YOINK_MIRROR/yoinklinux/yoink.db" 2>&1 > /dev/null')
+    print("Done.")
+    create_package_list()
+    to_install = []
+    installed = open(installed_db,'r')
+    log(log_level.INFO,"Opening {0}".format(installed_db))
+    installed_pkg_lines = installed.readlines()
+    for line in installed_pkg_lines:
+        pkg = line.strip().split(',')[0]
+        try:
+            timestamp = line.strip().split(',')[1]
+        except:
+            timestamp = 0
+        pkg_index = package_by_name.index(pkg)
+        if (int(timestamp) < int(package_timestamps[pkg_index])):
+            log(log_level.INFO,"{0} has an update!".format(pkg))
+            os.system("sed 's/"+pkg+","+str(timestamp)+"/"+pkg+","+str(package_timestamps[pkg_index])+"/g' -i /etc/yoink/db/installed.db")
+            to_install.append(pkg)
+    pretty_line=""
+    for package in to_install:
+        pretty_line=pretty_line + package + " "
+    install_packages(pretty_line)
+
 
 def getOptions(args=sys.argv[1:]):
-	parser = argparse.ArgumentParser(description="Desc.")
-	parser.add_argument("-i","--install",nargs='+',help="Installs the given programs")
-	parser.add_argument("-r","--reinstall",nargs='+',help="Reinstalls the given programs")
-	parser.add_argument("-u","--update",nargs='*',help="Updates yoink.")
-	options = parser.parse_args(args)
-	return options
+    parser = argparse.ArgumentParser(description="Desc.")
+    parser.add_argument("-i","--install",nargs='+',help="Installs the given programs")
+    parser.add_argument("-r","--reinstall",nargs='+',help="Reinstalls the given programs")
+    parser.add_argument("-u","--update",help="Updates yoink.",action="store_true")
+    options = parser.parse_args(args)
+    return options
 
 def main():
-	options = getOptions(sys.argv[1:])
-	if options.install:
-		create_package_list()
-		generate_install_list(options.install,False)
-	if options.reinstall:
-		create_package_list()
-		generate_install_list(options.reinstall,True)
+    options = getOptions(sys.argv[1:])
+    if options.install:
+        create_package_list()
+        generate_install_list(options.install,False)
+    elif options.reinstall:
+        create_package_list()
+        generate_install_list(options.reinstall,True)
+    elif options.update:
+        update()
+    
 
 if __name__ == '__main__':
-	main()
+    main()
