@@ -1,0 +1,91 @@
+#!/bin/bash
+
+progs_to_install=()
+progs_shortname=()
+progs_list=()
+packages=()
+package_names=()
+progs_to_install_names=()
+source /etc/yoink/mirror
+INSTALL=false
+
+[[ $(id -u) -ne 0 ]] && echo "User must be root!" && exit 1
+
+function create_package_list(){
+	for prog_name in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 1); do
+		package_names+=("$prog_name");
+	done
+	for prog_pkg in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 2); do
+		packages+=("$prog_pkg")
+	done
+}
+
+function find_packages() {
+	for request in ${progs_list}; do
+		for program in ${!package_names[@]}; do
+			if [[ "$request" == "${package_names[$program]}" ]]; then
+				progs_to_install+=("${packages[$program]}");
+				progs_to_install_names+=("${package_names[$program]}")
+			fi
+		done
+	done
+	echo Packages to install: ${progs_to_install[@]}
+	echo Package names: ${progs_to_install_names[@]}
+}
+
+# Downloads the program.
+
+function download_packages() {
+	echo "Yoink mirror: $YOINK_MIRROR"
+	echo ""
+	for i in "${!progs_to_install[@]}"; do
+		echo "Downloading ${progs_to_install_names[$i]} (${progs_to_install[i]})";
+		program=${progs_to_install[i]};
+		$(wget -q -O "/var/cache/yoink/$program" "$YOINK_MIRROR/yoinklinux/$program") 2>&1 >/dev/null
+		echo Done.
+	done
+}
+
+# Installs the program.
+
+function install_packages(){
+	for i in "${!progs_to_install[@]}"; do 
+		tarball=${progs_to_install[i]};
+		name=${progs_to_install_names[i]}
+		[[ ! -f /etc/yoink/db/installed.db ]] && touch /etc/yoink/db/installed.db
+		
+		grep -w $name /etc/yoink/db/installed.db > /dev/null ||
+		(echo "Adding $name to installed list..." && 
+		echo $name >> /etc/yoink/db/installed.db);
+
+		/etc/yoink/yoink-pkgr install /var/cache/yoink/$tarball ;
+	done
+}
+
+export -f create_package_list
+export -f find_packages
+export -f download_packages
+export -f install_packages
+export -f yoink_update
+
+while [[ $# -gt 0 ]] ; do
+	opt="$1"
+	shift;
+	case "$opt" in
+		"install")
+			progs_list=$@
+			INSTALL=true
+			break
+		;;
+		*)
+			echo "Invalid option."
+			exit 1
+	esac
+done
+
+if [[ $INSTALL -eq true ]]; then
+	create_package_list
+	find_packages
+	download_packages
+	install_packages
+fi
