@@ -1,167 +1,102 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-progs_to_install=()
-progs_shortname=()
-progs_list=()
-packages=()
-package_names=()
-package_dependencies=()
-progs_to_install_names=()
-needed_dependencies=()
-source /etc/yoink/mirror
-INSTALL=false
-DRY=false
+import os
+import sys
+import csv
+import argparse
+from enum import Enum
 
-#[[ $(id -u) -ne 0 ]] && echo "User must be root!" && exit 1
+package_by_name = []
+package_by_file = []
+package_dependencies = []
 
-# Creates a list of package short names (package_names), packages (.tar.gz), and dependencies.
-function create_package_list(){
-	for prog_name in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 1); do
-		package_names+=("$prog_name");
-	done
-	for prog_pkg in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 2); do
-		packages+=("$prog_pkg")
-	done
-	TMPIFS="$IFS"
-	while IFS="," read -r _ _ prog_dep; do
-		package_dependencies+=("${prog_dep}")
-	done < /etc/yoink/db/yoink.db
-	IFS="$TMPIFS"
-
-}
+yoink_dir="/etc/yoink/db"
+yoink_db="{0}/yoink.db".format(yoink_dir)
+installed_db="{0}/installed.db".format(yoink_dir)
+class log_level(Enum):
+	INFO = 0
+	WARN = 1
+	ERR = 2
 
 
-# Checks to see if the given array of dependencies is installed.
-function check_dependencies(){
-        echo "Resolving dependencies..."
-	for request in ${progs_list}; do
-		for program in ${!package_names[@]}; do
-			if [[ "$request" == "${package_names[$program]}" ]]; then
-				dependencies="${package_dependencies[$program]}"
-			fi
-		done
-	done
-	echo "Double checking dependencies..."
-	dependencies_to_check=()
-	for dep in $dependencies; do
-		dependencies_to_check+=("$dep")
-	done
-	dependencies=("")
-	while  [[ ${#dependencies_to_check[@]} -ne 0 ]]; do
-		curr_dependency="${dependencies_to_check[0]}"
-		deps=${dependencies_to_check[@]/${curr_dependency}}
-		dependencies_to_check=()
-		for d in $deps; do
-			dependencies_to_check+=("$d")
-		done
-		for program in ${!package_names[@]}; do
-			if [[ "$curr_dependency" == "${package_names[$program]}" ]]; then
-				depend=${package_dependencies[$program]}
-				for new_depend in ${depend[@]}; do
-					if [[ ! "${dependencies[@]}" =~ "$new_depend" ]]; then
-						dependencies+=("$new_depend") 
-						dependencies_to_check+=("$new_depend")
-					fi
-				done
+def log(level,line):
+	if level == log_level.INFO:
+		print("[INFO] {0}".format(line))
 
-			fi
-		done
-	done
-        for dep in ${dependencies[@]}; do
-                [[ "${needed_dependencies[@]}" =~ "${dep}" ]] && break
-                cat /etc/yoink/db/installed.db | cut -d ',' -f 1 | grep -w $dep > /dev/null
-                status=$?
-                [[ $status -ne 0 ]] && needed_dependencies=("$dep ${needed_dependencies[@]}")
-        done
-        echo "Dependencies: ${dependencies[@]}"
-	progs_list=("${needed_dependences[@]} ${progs_list[@]}")
-}
+def create_package_list():
+	rows = []
+	log(log_level.INFO,"Opening database: {0}".format(yoink_db))
+	with open(yoink_db, 'r') as db:
+		db_reader = csv.reader(db)
+		db_fields = next(db_reader)
 
-function find_packages() {
-	for request in ${progs_list}; do
-		for program in ${!package_names[@]}; do
-			if [[ "$request" == "${package_names[$program]}" ]]; then
-				progs_to_install+=("${packages[$program]} ");
-				progs_to_install_names+=("${package_names[$program]}")
-			fi
-		done
-	done
-	echo Packages to install: ${progs_to_install[@]}
-	echo Package names: ${progs_to_install_names[@]}
-}
+		for row in db_reader:
+			rows.append(row)
+		for row in rows:
+			try:	
+				package_by_name.append(row[0])
+				package_by_file.append(row[1])
+				package_dependencies.append(row[2].strip().split(' '))
+			except:
+				pass
 
-# Downloads the program.
-
-function download_packages() {
-	echo "Yoink mirror: $YOINK_MIRROR"
-	echo ""
-	for i in "${!progs_to_install[@]}"; do
-		echo "Downloading ${progs_to_install_names[$i]} (${progs_to_install[i]})";
-		program=${progs_to_install[i]};
-		$(wget -q -O "/var/cache/yoink/$program" "$YOINK_MIRROR/yoinklinux/$program") 2>&1 >/dev/null
-		echo Done.
-	done
-}
-
-# Installs the program.
-
-function install_packages(){
-	for i in "${!progs_to_install[@]}"; do 
-		tarball=${progs_to_install[i]};
-		name=${progs_to_install_names[i]}
-		[[ ! -f /etc/yoink/db/installed.db ]] && touch /etc/yoink/db/installed.db
-		/etc/yoink/yoink-pkgr install /var/cache/yoink/$tarball ;
-		if [[ $? -eq 0 ]]; then
-		    grep -w $name /etc/yoink/db/installed.db > /dev/null ||
-			(echo "Adding $name to installed list..." && 
-			echo $name >> /etc/yoink/db/installed.db);
-		else
-		    echo "An error occured!"
-		    exit 1
-		fi
-	done
-}
-
-function yoink_update(){
-	echo "Updating yoink database..."
-	$(wget -q -O /etc/yoink/db/yoink.db "$YOINK_MIRROR/yoinklinux/yoink.db") 2>&1 > /dev/null
-	echo "Done."
-}
-
-export -f create_package_list
-export -f find_packages
-export -f download_packages
-export -f install_packages
-export -f yoink_update
-export -f check_dependencies
-
-while [[ $# -gt 0 ]] ; do
-	opt="$1"
-	shift;
-	case "$opt" in
-		"update")
-			yoink_update
-			exit 0
-		;;
-		"--dry")
-			DRY=true
+def resolve_dependencies(dependencies):
+	for dependency in dependencies:
+		try:
+			dep_index = package_by_name.index(dependency)
+		except:
 			continue
-		;;
-		"install")
-			progs_list=$@
-			INSTALL=true
-			break
-		;;
-		*)
-			echo "Invalid option."
-			exit 1
-	esac
-done
+		dep_list = package_dependencies[dep_index]
+		for dep in dep_list:
+			if (dep not in dependencies) and not dep == '':
+				dependencies.append(dep)
+				dependencies=resolve_dependencies(dependencies)
+	return dependencies		
+		
 
-if [[ $INSTALL -eq true ]]; then
-	create_package_list
-	check_dependencies
-	progs_list=("${needed_dependencies[@]} ${progs_list[@]}")
-	find_packages
-	[[ ! $DRY ]] &&	download_packages && install_packages
-fi
+def generate_install_list(package_list):
+	to_install = []
+	dependencies = []
+	for package in package_list:
+		pkg_index = package_by_name.index(package)
+		to_install.append(package)
+		for dependency in package_dependencies[pkg_index]:
+			dependencies.append(dependency)
+	tmp_list = []
+	for x in to_install:
+		tmp_list.append(x)
+	deps = resolve_dependencies(dependencies)
+	for x in deps:
+		if x is not '':
+			tmp_list.append(x)
+
+	to_install = tmp_list
+
+	if 'filesystem' in to_install:
+		to_install.remove('filesystem')
+		to_install.insert(0,'filesystem')
+	print(to_install)
+	
+
+def update():
+	log(log_level.INFO,"Updating database...")	
+	os.system('$(wget -q -O /etc/yoink/db/yoink.db "$YOINK_MIRROR/yoinklinux/yoink.db") 2>&1 > /dev/null')
+	print("Done.")
+
+def getOptions(args=sys.argv[1:]):
+	parser = argparse.ArgumentParser(description="Desc.")
+	parser.add_argument("-i","--install",nargs='+',help="Installs the given programs")
+	parser.add_argument("-u","--update",nargs='*',help="Updates yoink.")
+	options = parser.parse_args(args)
+	return options
+
+def main():
+	options = getOptions(sys.argv[1:])
+	print(options)
+	if options.install:
+		print(options.install)
+		create_package_list()
+		generate_install_list(options.install)
+
+if __name__ == '__main__':
+	main()
