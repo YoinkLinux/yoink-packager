@@ -8,13 +8,13 @@ HAS_INSTALL_DOTSLASH=false
 
 function check_file(){
     file="$1"
-    { tar xf "$file" ./.TREE -C /tmp;} &> /dev/null
+    { tar -C /tmp -xf "$file" ./.TREE ;} &> /dev/null
     tree_status=$?
     if [[ "$tree_status" -ne 0 ]]; then
 	echo "Package $file does not have a .TREE file? What are you doing?"
 	exit 1
     fi
-    { tar xf "$file" ./install.sh -C /tmp;} &> /dev/null
+    { tar -C /tmp -xf "$file" ./install.sh ;} &> /dev/null
     install_status=$?
     if [[ "$install_status" -eq 0 ]]; then
         HAS_INSTALL=true
