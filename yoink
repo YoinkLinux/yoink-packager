@@ -5,12 +5,16 @@ progs_shortname=()
 progs_list=()
 packages=()
 package_names=()
+package_dependencies=()
 progs_to_install_names=()
+needed_dependencies=()
 source /etc/yoink/mirror
 INSTALL=false
+DRY=false
 
-[[ $(id -u) -ne 0 ]] && echo "User must be root!" && exit 1
+#[[ $(id -u) -ne 0 ]] && echo "User must be root!" && exit 1
 
+# Creates a list of package short names (package_names), packages (.tar.gz), and dependencies.
 function create_package_list(){
 	for prog_name in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 1); do
 		package_names+=("$prog_name");
@@ -18,13 +22,66 @@ function create_package_list(){
 	for prog_pkg in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 2); do
 		packages+=("$prog_pkg")
 	done
+	TMPIFS="$IFS"
+	while IFS="," read -r _ _ prog_dep; do
+		package_dependencies+=("${prog_dep}")
+	done < /etc/yoink/db/yoink.db
+	IFS="$TMPIFS"
+
+}
+
+
+# Checks to see if the given array of dependencies is installed.
+function check_dependencies(){
+        echo "Resolving dependencies..."
+	for request in ${progs_list}; do
+		for program in ${!package_names[@]}; do
+			if [[ "$request" == "${package_names[$program]}" ]]; then
+				dependencies="${package_dependencies[$program]}"
+			fi
+		done
+	done
+	echo "Double checking dependencies..."
+	dependencies_to_check=()
+	for dep in $dependencies; do
+		dependencies_to_check+=("$dep")
+	done
+	dependencies=("")
+	while  [[ ${#dependencies_to_check[@]} -ne 0 ]]; do
+		curr_dependency="${dependencies_to_check[0]}"
+		deps=${dependencies_to_check[@]/${curr_dependency}}
+		dependencies_to_check=()
+		for d in $deps; do
+			dependencies_to_check+=("$d")
+		done
+		for program in ${!package_names[@]}; do
+			if [[ "$curr_dependency" == "${package_names[$program]}" ]]; then
+				depend=${package_dependencies[$program]}
+				for new_depend in ${depend[@]}; do
+					if [[ ! "${dependencies[@]}" =~ "$new_depend" ]]; then
+						dependencies+=("$new_depend") 
+						dependencies_to_check+=("$new_depend")
+					fi
+				done
+
+			fi
+		done
+	done
+        for dep in ${dependencies[@]}; do
+                [[ "${needed_dependencies[@]}" =~ "${dep}" ]] && break
+                cat /etc/yoink/db/installed.db | cut -d ',' -f 1 | grep -w $dep > /dev/null
+                status=$?
+                [[ $status -ne 0 ]] && needed_dependencies=("$dep ${needed_dependencies[@]}")
+        done
+        echo "Dependencies: ${dependencies[@]}"
+	progs_list=("${needed_dependences[@]} ${progs_list[@]}")
 }
 
 function find_packages() {
 	for request in ${progs_list}; do
 		for program in ${!package_names[@]}; do
 			if [[ "$request" == "${package_names[$program]}" ]]; then
-				progs_to_install+=("${packages[$program]}");
+				progs_to_install+=("${packages[$program]} ");
 				progs_to_install_names+=("${package_names[$program]}")
 			fi
 		done
@@ -53,12 +110,15 @@ function install_packages(){
 		tarball=${progs_to_install[i]};
 		name=${progs_to_install_names[i]}
 		[[ ! -f /etc/yoink/db/installed.db ]] && touch /etc/yoink/db/installed.db
-		
-		grep -w $name /etc/yoink/db/installed.db > /dev/null ||
-		(echo "Adding $name to installed list..." && 
-		echo $name >> /etc/yoink/db/installed.db);
-
 		/etc/yoink/yoink-pkgr install /var/cache/yoink/$tarball ;
+		if [[ $? -eq 0 ]]; then
+		    grep -w $name /etc/yoink/db/installed.db > /dev/null ||
+			(echo "Adding $name to installed list..." && 
+			echo $name >> /etc/yoink/db/installed.db);
+		else
+		    echo "An error occured!"
+		    exit 1
+		fi
 	done
 }
 
@@ -73,6 +133,7 @@ export -f find_packages
 export -f download_packages
 export -f install_packages
 export -f yoink_update
+export -f check_dependencies
 
 while [[ $# -gt 0 ]] ; do
 	opt="$1"
@@ -81,6 +142,10 @@ while [[ $# -gt 0 ]] ; do
 		"update")
 			yoink_update
 			exit 0
+		;;
+		"--dry")
+			DRY=true
+			continue
 		;;
 		"install")
 			progs_list=$@
@@ -95,7 +160,8 @@ done
 
 if [[ $INSTALL -eq true ]]; then
 	create_package_list
+	check_dependencies
+	progs_list=("${needed_dependencies[@]} ${progs_list[@]}")
 	find_packages
-	download_packages
-	install_packages
+	[[ ! $DRY ]] &&	download_packages && install_packages
 fi
