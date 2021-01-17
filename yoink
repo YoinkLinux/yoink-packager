@@ -10,9 +10,9 @@ package_by_name = []
 package_by_file = []
 package_dependencies = []
 
-yoink_dir="/etc/yoink/db"
-yoink_db="{0}/yoink.db".format(yoink_dir)
-installed_db="{0}/installed.db".format(yoink_dir)
+yoink_dir="/etc/yoink"
+yoink_db="{0}/db/yoink.db".format(yoink_dir)
+installed_db="{0}/db/installed.db".format(yoink_dir)
 class log_level(Enum):
 	INFO = 0
 	WARN = 1
@@ -53,8 +53,13 @@ def resolve_dependencies(dependencies):
 				dependencies=resolve_dependencies(dependencies)
 	return dependencies		
 		
+def install_packages(list):
+	log(log_level.INFO,"Passing off to yoink-installer")
+	command="{0}{1} install {2}".format(yoink_dir,"/yoink-installer",list)
+	log(log_level.INFO,"Command : {0}".format(command))
+	os.system(command)
 
-def generate_install_list(package_list):
+def generate_install_list(package_list,reinstall):
 	to_install = []
 	dependencies = []
 	for package in package_list:
@@ -65,18 +70,32 @@ def generate_install_list(package_list):
 	tmp_list = []
 	for x in to_install:
 		tmp_list.append(x)
-	deps = resolve_dependencies(dependencies)
-	for x in deps:
-		if x is not '':
-			tmp_list.append(x)
+	if not reinstall:
+		deps = resolve_dependencies(dependencies)
+		for x in deps:
+			if x != '':
+				tmp_list.append(x)
 
-	to_install = tmp_list
+		to_install = tmp_list
 
 	if 'filesystem' in to_install:
 		to_install.remove('filesystem')
 		to_install.insert(0,'filesystem')
-	print(to_install)
+
+	installed = open(installed_db,'r')
+	log(log_level.INFO,"Opening {0}".format(installed_db))
+	installed_pkg_lines = installed.readlines()
+	if not reinstall:
+		for line in installed_pkg_lines:
+			pkg = line.strip()
+			if pkg in to_install:
+				print("Removing {0}, it is already installed.".format(pkg))
+				to_install.remove(pkg)
 	
+	pretty_line=""
+	for package in to_install:
+		pretty_line=pretty_line + package + " "
+	install_packages(pretty_line)
 
 def update():
 	log(log_level.INFO,"Updating database...")	
@@ -86,17 +105,19 @@ def update():
 def getOptions(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Desc.")
 	parser.add_argument("-i","--install",nargs='+',help="Installs the given programs")
+	parser.add_argument("-r","--reinstall",nargs='+',help="Reinstalls the given programs")
 	parser.add_argument("-u","--update",nargs='*',help="Updates yoink.")
 	options = parser.parse_args(args)
 	return options
 
 def main():
 	options = getOptions(sys.argv[1:])
-	print(options)
 	if options.install:
-		print(options.install)
 		create_package_list()
-		generate_install_list(options.install)
+		generate_install_list(options.install,False)
+	if options.reinstall:
+		create_package_list()
+		generate_install_list(options.reinstall,True)
 
 if __name__ == '__main__':
 	main()

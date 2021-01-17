@@ -58,7 +58,7 @@ function post_build(){
 	[[ -f install.sh ]] && cp ./install.sh $tmpname
  	gen_tree	
 	sudo chown root:root -R .
-	tar_prefix=tar --exclude=./ -P -czf
+	tar_prefix='tar --exclude=./ -P -czf'
 	if [[ ! -z $rel_version ]]; then
 		$tar_prefix /tmp/$name-$major_version.$min_version.$rel_version.tar.gz ./
 	elif [[ ! -z $min_version ]]; then
