@@ -6,6 +6,7 @@ progs_list=()
 packages=()
 package_names=()
 progs_to_install_names=()
+prog_timestamp=()
 source /etc/yoink/mirror
 INSTALL=false
 
@@ -17,6 +18,9 @@ function create_package_list(){
 	done
 	for prog_pkg in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 2); do
 		packages+=("$prog_pkg")
+	done
+	for timestamp in $(cat /etc/yoink/db/yoink.db | cut -d ',' -f 4); do
+		prog_timestamp+=("$timestamp")
 	done
 }
 
@@ -52,11 +56,12 @@ function install_packages(){
 	for i in "${!progs_to_install[@]}"; do 
 		tarball=${progs_to_install[i]};
 		name=${progs_to_install_names[i]}
+		timestamp=${prog_timestamp[i]}
 		[[ ! -f /etc/yoink/db/installed.db ]] && touch /etc/yoink/db/installed.db
 		
 		grep -w $name /etc/yoink/db/installed.db > /dev/null ||
 		(echo "Adding $name to installed list..." && 
-		echo $name >> /etc/yoink/db/installed.db);
+		echo "$name,$timestamp" >> /etc/yoink/db/installed.db);
 
 		/etc/yoink/yoink-pkgr install /var/cache/yoink/$tarball ;
 	done
