@@ -38,6 +38,7 @@ function install_packages(){
 	echo "Unpacking $(basename $package)"
 	if [[ ! -z $YOINK_INSTALL_DIR ]]; then
 		DIR=$YOINK_INSTALL_DIR
+		echo "Using alternative directory: $dir"
 	else
 		DIR=/
 	fi
