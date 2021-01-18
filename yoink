@@ -59,13 +59,16 @@ def resolve_dependencies(dependencies):
                 dependencies=resolve_dependencies(dependencies)
     return dependencies     
         
-def install_packages(list):
+def install_packages(list,directory=None):
     log(log_level.INFO,"Passing off to yoink-installer")
-    command="{0}{1} install {2}".format(yoink_dir,"/yoink-installer",list)
+    if directory is None:
+        command="{0}{1} install {2}".format(yoink_dir,"/yoink-installer",list)
+    else:
+        command="{0}{1} --dir {2} install {3}".format(yoink_dir,"/yoink-installer",directory,list)
     log(log_level.INFO,"Command : {0}".format(command))
     os.system(command)
 
-def generate_install_list(package_list,reinstall):
+def generate_install_list(package_list,reinstall,directory=None):
     to_install = []
     dependencies = []
     for package in package_list:
@@ -117,7 +120,7 @@ def generate_install_list(package_list,reinstall):
     pretty_line=""
     for package in to_install:
         pretty_line=pretty_line + package + " "
-    install_packages(pretty_line)
+    install_packages(pretty_line,directory)
 
 def update():
     log(log_level.INFO,"Updating database...")  
@@ -149,6 +152,7 @@ def getOptions(args=sys.argv[1:]):
     parser = argparse.ArgumentParser(description="Desc.")
     parser.add_argument("-i","--install",nargs='+',help="Installs the given programs")
     parser.add_argument("-r","--reinstall",nargs='+',help="Reinstalls the given programs")
+    parser.add_argument("-d","--directory",help="Specifies the install directory.")
     parser.add_argument("-u","--update",help="Updates yoink.",action="store_true")
     options = parser.parse_args(args)
     return options
@@ -157,7 +161,7 @@ def main():
     options = getOptions(sys.argv[1:])
     if options.install:
         create_package_list()
-        generate_install_list(options.install,False)
+        generate_install_list(options.install,False,options.directory)
     elif options.reinstall:
         create_package_list()
         generate_install_list(options.reinstall,True)
