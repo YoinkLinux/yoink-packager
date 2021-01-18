@@ -33,7 +33,10 @@ def create_package_list():
     log(log_level.INFO,"Opening database: {0}".format(yoink_db))
     with open(yoink_db, 'r') as db:
         db_reader = csv.reader(db)
-        db_fields = next(db_reader)
+        try:
+            db_fields = next(db_reader)
+        except:
+            print ("Database not found! Please run wget <Yoink Mirror>/yoinklinux/yoink.db -O /etc/yoink/db/yoink.db && touch /etc/yoink/db/installed.db")
 
         for row in db_reader:
             rows.append(row)
