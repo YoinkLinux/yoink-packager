@@ -4,6 +4,7 @@ package_list=()
 SKIP_CHECK=false
 HAS_INSTALL=false
 HAS_INSTALL_DOTSLASH=false
+YOINK_INSTALL_DIR=
 [[ $(id -u) -ne 0 ]] && echo "Must be root to use!" && exit 1
 
 function check_file(){
@@ -38,7 +39,6 @@ function install_packages(){
 	echo "Unpacking $(basename $package)"
 	if [[ ! -z $YOINK_INSTALL_DIR ]]; then
 		DIR=$YOINK_INSTALL_DIR
-		echo "Using alternative directory: $dir"
 	else
 		DIR=/
 	fi
@@ -58,6 +58,12 @@ while [[ $# -gt 0 ]]; do
                 INSTALL=true
                 break
                 ;;
+	    "--dir")
+	    	opt="$1"
+		shift;
+	    	YOINK_INSTALL_DIR=$opt
+		continue
+	    ;;
             "--skip-check")
                     SKIP_CHECK=true
                     ;;
