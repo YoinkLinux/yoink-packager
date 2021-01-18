@@ -164,7 +164,10 @@ def main():
     options = getOptions(sys.argv[1:])
     if options.install:
         create_package_list()
-        generate_install_list(options.install,False,options.directory)
+        if options.directory:
+            generate_install_list(options.install,False,options.directory)
+        else:
+            generate_install_list(options.install,False,options.directory)
     elif options.reinstall:
         create_package_list()
         generate_install_list(options.reinstall,True)
