@@ -1,0 +1,6 @@
+project(yoink)
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+cmake_minimum_required(VERSION 3.16)
+set(CMAKE_CXX_STANDARD 20)
+add_executable(yoink src/yoink.cpp src/csvreader.cpp include/csvreader.h src/package.cpp include/package.h)
+target_include_directories(yoink PRIVATE include)
