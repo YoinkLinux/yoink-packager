@@ -9,23 +9,28 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+#include <vector>
 
 using std::string;
+using std::set;
+using std::vector;
 
 class Package {
     public:
 
     private:
-        string name;
+        string packageName;
         string file;
-        int timestamp;
-        std::set<string> packageDependencies;
+        string guid;
+        int version;
+        set<string> packageDependencies;
     public:
         string getName();
         string getFile();
         int getTimestamp();
         std::set<string> getDependencies();
-        Package(string name, string file, string timestamp, std::vector<string> dependencies);
+        Package(const string &name, const string& file, const vector<string>& dependencies, const int version,
+                const string &guid);
         Package();
         bool operator==(const Package &otherPackage) const;
 

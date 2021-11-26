@@ -3,20 +3,19 @@
  * Assignment X
  *  Package
  */
-#include <vector>
 #include "package.h"
 
 /**
- * Gets the name of this package.
- * @return The name of the package.
+ * Gets the packageName of this package.
+ * @return The packageName of the package.
  */
 string Package::getName() {
-    return name;
+    return packageName;
 }
 
 /**
  * Gets the file (ie, acl-ver.tar.gz) path for downloading.
- * @return The full file name.
+ * @return The full file packageName.
  */
 string Package::getFile() {
     return file;
@@ -24,10 +23,10 @@ string Package::getFile() {
 
 /**
  * Gets when this package was created in the database.
- * @return The timestamp
+ * @return The version
  */
 int Package::getTimestamp() {
-    return timestamp;
+    return version;
 }
 
 /**
@@ -39,29 +38,33 @@ std::set<string> Package::getDependencies() {
 }
 
 /**
- * Creates a new package
+ * Creates a new package.
  * @param name - The name of the package.
- * @param file - The file for the package.
- * @param timestamp - The timestamp of the package.
- * @param dependencies - The dependencies for the package.
+ * @param file - The full package file to download.
+ * @param dependencies - The dependencies of the package.
+ * @param version - The current version of the package.
+ * @param guid - The GUID of the package.
  */
-Package::Package(string name, string file, string timestamp, std::vector<string> dependencies) {
-    this->name = name;
+Package::Package(const string &name, const string& file, const vector<string>& dependencies, const int version,
+                 const string &guid) {
+    this->packageName = name;
     this->file = file;
-    this->timestamp = stoi(timestamp);
-    for (string depends: dependencies)
+    this->version = version;
+    this->guid = guid;
+    for (const string &depends: dependencies)
         packageDependencies.insert(depends);
 }
 
 bool Package::operator==(const Package &otherPackage) const {
-    return this->name == otherPackage.name && this->timestamp == otherPackage.timestamp
-           && this->timestamp == otherPackage.timestamp && this->file == otherPackage.file;
+    return this->packageName == otherPackage.packageName && this->version == otherPackage.version
+           && this->version == otherPackage.version && this->file == otherPackage.file;
 }
 
 Package::Package() {
-    name = "";
+    packageName = "";
     file = "";
-    timestamp = -1;
+    version = -1;
+    guid = "";
     packageDependencies.clear();
 }
 

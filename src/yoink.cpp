@@ -6,6 +6,9 @@
 int main() {
     Yoink y;
     set<string> depends = y.resolve_dependencies("acl");
+    for(auto package : depends){
+        std::cout << package << std::endl;
+    }
 }
 
 /**
@@ -32,25 +35,12 @@ void Yoink::log(Yoink::LogLevel level, const string &output) {
 }
 
 /**
- * Creates a list of all packages that can be installed from the yoink.db file.
- */
-void Yoink::create_package_list() {
-    set<std::vector<string>> dataFromCsv(csvreader::readFromFile(YOINK_DB));
-    for (auto package: dataFromCsv) {
-        string packageName = package[0];
-        std::vector<string> dependencies = csvreader::splitter(package[2], ' ');
-        Package p(packageName, package[1], package[3], dependencies);
-        packageByName.insert(make_pair(packageName, p));
-    }
-}
-
-/**
  * Resolves all of the dependencies
  * @return
  */
 set<string> Yoink::resolve_dependencies(string packageName) {
     set<string> deps;
-    Package p(packageByName[packageName]);
+    Package p(availablePackages[packageName]);
     if (p.getName().empty())
         return deps;
     set<string> dependencies(p.getDependencies());
@@ -69,8 +59,8 @@ set<string> Yoink::resolve_dependencies_helper(set<string> &dependencies) {
     while (!added) {
         added = false;
         for (auto dependency: dependencies) {
-            if (packageByName.count(dependency)) {
-                auto depList = packageByName[dependency];
+            if (availablePackages.count(dependency)) {
+                auto depList = availablePackages[dependency];
                 for (auto _dependency: depList.getDependencies()) {
                     if (dependencies.count(_dependency) < 1) {
                         dependencies.insert(_dependency);
@@ -103,5 +93,6 @@ string Yoink::generate_install_command(string packageName, bool reinstall, const
 }
 
 Yoink::Yoink() {
-    create_package_list();
+    availablePackages = db.getPackagesAvailable();
+    installedPackages = db.getInstalledPackages();
 }
