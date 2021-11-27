@@ -48,16 +48,15 @@ class Database {
         static int queryPackagesInstalledCallback([[maybe_unused]] void *data, [[maybe_unused]] int argc, char **argv,
                                                   [[maybe_unused]] char **azColName);
         static int getPackagesFromDatabase(char *const *argv, map<string, Package> &list);
+        static int queryDatabase(char *const *argv, map<string, Package> &list);
         sqlite3_stmt *stmt;
     public:
         Database();
         ~Database();
         static map<string, Package> getPackagesAvailable();
         static map<string, Package> getInstalledPackages();
-        Package getPackageByName(string name);
-
-
-        static int queryDatabase(char *const *argv, map<string, Package> &list);
+        Package getInstalledPackageByName(string name);
+        Package getAvailablePackageByName(string name);
 };
 
 

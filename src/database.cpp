@@ -62,7 +62,7 @@ int Database::queryDatabase(char *const *argv, map<string, Package> &list) {
     string version = argv[3];
     string guid = argv[4];
     Package p(packageName, fileName, dependencies, stoi(version), guid);
-    addPackage(p,list);
+    addPackage(p, list);
     return 0;
 }
 
@@ -123,6 +123,34 @@ void Database::addPackage(Package package, map<string, Package> &list) {
     list.insert(std::make_pair(package.getName(), package));
 }
 
+/**
+ * Gets all of the installed packages.
+ * @return A map of all of the installed packages, queryable by name.
+ */
 map<string, Package> Database::getInstalledPackages() {
     return installedPackages;
+}
+
+/**
+ * Gets an installed package based off its name.
+ * @param name - The name of the package.
+ * @return The package that corresponds to that name. Will return an empty package if that name does not exist.
+ */
+Package Database::getInstalledPackageByName(string name) {
+    if (installedPackages.count(name))
+        return installedPackages[name];
+    Package p;
+    return p;
+}
+
+/**
+ * Gets an available package based off its name.
+ * @param name - The name of the package to look up.
+ * @return The package that corresponds to that name. Will return an empty package if the name does not exist.
+ */
+Package Database::getAvailablePackageByName(string name) {
+    if (packagesAvailable.count(name))
+        return packagesAvailable[name];
+    Package p;
+    return p;
 }
