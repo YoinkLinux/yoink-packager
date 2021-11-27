@@ -41,6 +41,8 @@ class Database {
                 "GUID TEXT NOT NULL UNIQUE); ";
         // The SQL to run when we are querying packages.
         const char *QUERY_PACKAGES_SQL = "SELECT * FROM Packages;";
+        // Unneeded but need this for SQL queries to work.
+        sqlite3_stmt *stmt;
         static vector<string> splitter(const string &line, char delimiter);
         static void addPackage(Package p, map<string, Package> &list);
         static int queryAvailablePackagesCallback([[maybe_unused]] void *data, [[maybe_unused]] int argc, char **argv,
@@ -49,7 +51,6 @@ class Database {
                                                   [[maybe_unused]] char **azColName);
         static int getPackagesFromDatabase(char *const *argv, map<string, Package> &list);
         static int queryDatabase(char *const *argv, map<string, Package> &list);
-        sqlite3_stmt *stmt;
     public:
         Database();
         ~Database();

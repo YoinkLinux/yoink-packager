@@ -1,7 +1,5 @@
 #include <iostream>
 #include <yoink.h>
-#include <csvreader.h>
-#include <sqlite3.h>
 
 int main() {
     Yoink y;
