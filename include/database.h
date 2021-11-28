@@ -19,19 +19,11 @@ using std::vector;
 
 class Database {
     private:
-        // The database that contains all the installed packages.
-        sqlite3 *installedDb;
         // The database that contains all the packages that can be installed.
-        sqlite3 *packageDb;
-        // The list of packages available.
-        static map<string, Package> packagesAvailable;
+        sqlite3 *database;
         // The list of all installed packages.
-        static map<string, Package> installedPackages;
+        map<string, Package> packages;
         // Location of the yoink database (database where all possible packages are)
-        const char *YOINK_DB = "/etc/yoink/db/yoink.db";
-        // Location of the installed package database
-        const char *INSTALLED_DB = "/etc/yoink/db/installed.db";
-        // The SQL to run when we are creating a database
         const char *CREATE_TABLE_SQL =
                 "CREATE TABLE IF NOT EXISTS Packages("
                 "Name           TEXT    NOT NULL UNIQUE, "
@@ -44,20 +36,15 @@ class Database {
         // Unneeded but need this for SQL queries to work.
         sqlite3_stmt *stmt;
         static vector<string> splitter(const string &line, char delimiter);
-        static void addPackage(Package p, map<string, Package> &list);
-        static int queryAvailablePackagesCallback([[maybe_unused]] void *data, [[maybe_unused]] int argc, char **argv,
-                                                  [[maybe_unused]] char **azColName);
-        static int queryPackagesInstalledCallback([[maybe_unused]] void *data, [[maybe_unused]] int argc, char **argv,
-                                                  [[maybe_unused]] char **azColName);
-        static int getPackagesFromDatabase(char *const *argv, map<string, Package> &list);
-        static int queryDatabase(char *const *argv, map<string, Package> &list);
+        void addPackage(Package p);
+        int queryDatabase([[maybe_unused]] void *data, [[maybe_unused]] int argc, char **argv,
+                                 [[maybe_unused]] char **azColName);
     public:
         Database();
+        explicit Database(const char* filePath);
         ~Database();
-        static map<string, Package> getPackagesAvailable();
-        static map<string, Package> getInstalledPackages();
-        Package getInstalledPackageByName(string name);
-        Package getAvailablePackageByName(string name);
+        map<string, Package> getPackages();
+        Package getPackageByName(const string& name);
 };
 
 

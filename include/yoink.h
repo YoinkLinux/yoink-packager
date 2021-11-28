@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <package.h>
-#include <database.h>
+#include "package.h"
+#include "database.h"
 #include <sstream>
 #include <iostream>
 
@@ -20,8 +20,9 @@ class Yoink {
         const char *YOINK_DIR = "/etc/yoink/";
         const char *YOINK_DB = "/etc/yoink/db/yoink.db";
         const char *INSTALLED_DB = "/etc/yoink/db/installed.db";
-        set <string> resolve_dependencies_helper(set<string> &dependencies);
-        Database db;
+        set<string> resolve_dependencies_helper(set<string> &dependencies);
+        Database installedPackagesDatabase;
+        Database availablePackagesDatabase;
     public:
         enum LogLevel {
             INFO,

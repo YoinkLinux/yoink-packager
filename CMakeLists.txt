@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 20)
 add_executable(
         yoink
-        src/yoink.cpp
+        src/yoink/yoink.cpp
         src/package.cpp
         include/package.h
         src/database.cpp
