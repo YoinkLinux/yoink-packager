@@ -1,5 +1,8 @@
 extern crate pretty_env_logger;
-#[derive(Debug, Clone)]
+use serde::{Deserialize, Serialize};
+use serde_json::{Result, Value};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Package {
     name: String,
     base: String,
