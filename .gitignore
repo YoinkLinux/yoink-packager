@@ -7,3 +7,5 @@ CMakeCache.txt
 Makefile
 *.cbp
 *.o
+**/target
+Cargo.lock
