@@ -1,22 +1,16 @@
 extern crate pretty_env_logger;
-use std::time::{Duration, SystemTime};
-
 use serde::{Deserialize, Serialize};
-use serde_json::{Result, Value};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Package {
     pub name: String,
     pub base: String,
     pub ver: String,
-    pub timestamp: Duration,
+    pub timestamp: String,
 }
 
 impl Package {
-    pub fn new(name: String, base: String, ver: String) -> Package {
-        let timestamp = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap();
+    pub fn new(name: String, base: String, ver: String, timestamp: String) -> Package {
         Package {
             name,
             base,
@@ -25,13 +19,19 @@ impl Package {
         }
     }
 
+    pub fn default() -> Package {
+        Package::new(
+            String::from(""),
+            String::from(""),
+            String::from(""),
+            String::from(""),
+        )
+    }
+
     pub fn log(self) {
         info!(
             "{} {} {} {}",
-            self.name,
-            self.base,
-            self.ver,
-            self.timestamp.as_secs()
+            self.name, self.base, self.ver, self.timestamp
         );
     }
 
